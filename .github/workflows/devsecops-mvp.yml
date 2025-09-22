@@ -45,10 +45,21 @@ jobs:
         run: |
           echo "## 🔍 Dependency Vulnerability Report" > report.md
           echo "" >> report.md
-          jq -r '
-            .advisories[] |
-            "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
-          ' audit.json >> report.md || echo "No vulnerabilities found." >> report.md
+
+          # Dump full vulnerability objects if any
+          vulns=$(jq '.Results[].Vulnerabilities | length' trivy-results.json | awk '{s+=$1} END {print s}')
+          if [ "$vulns" -gt 0 ]; then
+            jq -r '
+              .Results[].Vulnerabilities[] |
+              "| \(.PkgName) | \(.VulnerabilityID) | \(.Severity) | \(.Title // "No title") | Fixed: \(.FixedVersion // "N/A") |"
+            ' trivy-results.json >> report.md
+          else
+            echo "No vulnerabilities found." >> report.md
+          fi
+
+          echo "--- RAW JSON (for debugging) ---" >> report.md
+          cat trivy-results.json >> report.md
+
       - name: Read vulnerability report
         id: vuln_report
         run: |
@@ -64,7 +75,8 @@ jobs:
         id: ai_explain
         run: |
           content=$(cat report.md || echo "No vulnerabilities found.")
-          prompt="Explain these vulnerabilities in simple terms, their risk, and how to fix: $content"
+          
+          prompt="Explain these dependency scan results in plain English:\n\n$(cat report.md)"
           response=$(curl https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
