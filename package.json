@@ -1,13 +1,21 @@
 {
-  "name": "sample-devsecops-project",
+  "name": "vuln-testbed-nodejs",
   "version": "1.0.0",
-  "description": "Sample Node.js app to test AI DevSecOps workflow",
+  "description": "Deliberately vulnerable Node.js app for DevSecOps testing",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "express": "4.17.1",
-    "lodash": "4.17.19"
+    "express": "4.16.0",
+    "lodash": "4.17.19",
+    "sqlite3": "4.0.6",
+    "multer": "1.3.0",
+    "jsonwebtoken": "8.2.1",
+    "request": "2.88.0",
+    "axios": "0.19.0",
+    "xmldom": "0.1.27",
+    "mysql": "2.16.0",
+    "crypto-js": "3.1.9-1"
   }
 }
