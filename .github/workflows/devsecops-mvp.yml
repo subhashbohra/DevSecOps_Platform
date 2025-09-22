@@ -3,6 +3,7 @@ name: AI DevSecOps MVP
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+
 permissions:
   contents: write
   pull-requests: write
@@ -17,55 +18,51 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Node.js for dependency scanning (can extend for Python, Java, etc.)
+      # Setup Node.js (can extend later for Python/Java)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # Install deps (safe mode, no audit fix)
+      # Install deps
       - name: Install dependencies
         run: npm install --ignore-scripts
 
-      # Run npm audit (SCA scan)
+      # Run audit
       - name: Run dependency audit
         run: npm audit --json > audit.json || true
-      # Run trivy Scan 
-      - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          ignore-unfixed: true
-          format: json
-          output: trivy-results.json
 
-
-      # Parse audit report into Markdown table
+      # Generate markdown report
       - name: Generate vulnerability report
         run: |
           echo "## 🔍 Dependency Vulnerability Report" > report.md
           echo "" >> report.md
-          jq -r '
-            .advisories[] |
-            "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
-          ' audit.json >> report.md || echo "No vulnerabilities found." >> report.md
+          if jq -e '.advisories | length > 0' audit.json > /dev/null; then
+            jq -r '
+              .advisories[] |
+              "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
+            ' audit.json >> report.md
+          else
+            echo "No vulnerabilities found." >> report.md
+          fi
+
+      # Read report into output
       - name: Read vulnerability report
         id: vuln_report
         run: |
           content=$(cat report.md)
-          # Escape newlines for GitHub Actions output
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
           echo "report=$content" >> $GITHUB_OUTPUT
 
-      # AI Explanation step (requires OPENAI_API_KEY in repo/org secrets)
+      # AI explanation step
       - name: Generate AI explanation
         id: ai_explain
         run: |
           content=$(cat report.md || echo "No vulnerabilities found.")
-          prompt="Explain these vulnerabilities in simple terms, their risk, and how to fix: $content"
-          response=$(curl https://api.openai.com/v1/chat/completions \
+          prompt="Explain these dependency scan results in plain English:\n\n$content"
+          response=$(curl -s https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
             -d "{
@@ -74,7 +71,7 @@ jobs:
             }" | jq -r '.choices[0].message.content')
           echo "ai_response=$response" >> $GITHUB_OUTPUT
 
-      # Create PR comment with dashboard
+      # Comment in PR
       - name: Post PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -89,17 +86,17 @@ jobs:
             ### 🤖 AI Explanation
             ${{ steps.ai_explain.outputs.ai_response }}
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Auto-fix dependencies (optional safe updates)
-      - name: Auto-fix dependencies
-        run: |
-          npm audit fix || true
-          if [[ `git status --porcelain` ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git checkout -b fix/dependency-updates || git checkout fix/dependency-updates
-            git add .
-            git commit -m "chore: auto-fix dependencies"
-            git push origin HEAD
-          fi
+      # 🚫 Commenting out auto-fix step for now
+      # - name: Auto-fix dependencies
+      #   run: |
+      #     npm audit fix || true
+      #     if [[ `git status --porcelain` ]]; then
+      #       git config user.name "github-actions[bot]"
+      #       git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      #       git checkout -b fix/dependency-updates || git checkout fix/dependency-updates
+      #       git add .
+      #       git commit -m "chore: auto-fix dependencies"
+      #       git push origin HEAD
+      #     fi
