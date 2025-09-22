@@ -3,6 +3,10 @@ name: AI DevSecOps MVP
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   devsecops-scan:
@@ -66,6 +70,8 @@ jobs:
 
             ### 🤖 AI Explanation
             ${{ steps.ai_explain.outputs.ai_response }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
 
       # Auto-fix dependencies (optional safe updates)
       - name: Auto-fix dependencies
