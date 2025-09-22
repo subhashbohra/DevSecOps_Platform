@@ -38,8 +38,6 @@ jobs:
           ignore-unfixed: true
           format: json
           output: trivy-results.json
-
-
       # Parse audit report into Markdown table
       - name: Generate vulnerability report
         run: |
