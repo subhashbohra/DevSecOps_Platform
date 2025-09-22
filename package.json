@@ -1,0 +1,13 @@
+{
+  "name": "sample-devsecops-project",
+  "version": "1.0.0",
+  "description": "Sample Node.js app to test AI DevSecOps workflow",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "4.17.1",
+    "lodash": "4.17.19"
+  }
+}
