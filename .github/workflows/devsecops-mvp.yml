@@ -30,6 +30,15 @@ jobs:
       # Run npm audit (SCA scan)
       - name: Run dependency audit
         run: npm audit --json > audit.json || true
+      # Run trivy Scan 
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          ignore-unfixed: true
+          format: json
+          output: trivy-results.json
+
 
       # Parse audit report into Markdown table
       - name: Generate vulnerability report
@@ -40,12 +49,21 @@ jobs:
             .advisories[] |
             "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
           ' audit.json >> report.md || echo "No vulnerabilities found." >> report.md
+      - name: Read vulnerability report
+        id: vuln_report
+        run: |
+          content=$(cat report.md)
+          # Escape newlines for GitHub Actions output
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          echo "report=$content" >> $GITHUB_OUTPUT
 
       # AI Explanation step (requires OPENAI_API_KEY in repo/org secrets)
       - name: Generate AI explanation
         id: ai_explain
         run: |
-          content=$(cat report.md)
+          content=$(cat report.md || echo "No vulnerabilities found.")
           prompt="Explain these vulnerabilities in simple terms, their risk, and how to fix: $content"
           response=$(curl https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
@@ -66,7 +84,7 @@ jobs:
             ✅ Dependency scan completed.
 
             ### 📊 Vulnerability Report
-            $(cat report.md)
+            ${{ steps.vuln_report.outputs.report }}
 
             ### 🤖 AI Explanation
             ${{ steps.ai_explain.outputs.ai_response }}
