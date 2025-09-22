@@ -3,6 +3,7 @@ name: AI DevSecOps MVP
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+
 permissions:
   contents: write
   pull-requests: write
@@ -13,24 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Node.js for dependency scanning (can extend for Python, Java, etc.)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # Install deps (safe mode, no audit fix)
-      - name: Install dependencies
-        run: npm install --ignore-scripts
-
-      # Run npm audit (SCA scan)
-      - name: Run dependency audit
-        run: npm audit --json > audit.json || true
-      # Run trivy Scan 
+      # 🔎 Run Trivy filesystem scan
       - name: Run Trivy scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -39,42 +26,46 @@ jobs:
           format: json
           output: trivy-results.json
 
-
-      # Parse audit report into Markdown table
+      # 📊 Generate vulnerability report (table + raw JSON)
       - name: Generate vulnerability report
         run: |
           echo "## 🔍 Dependency Vulnerability Report" > report.md
           echo "" >> report.md
-          jq -r '
-            .advisories[] |
-            "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
-          ' audit.json >> report.md || echo "No vulnerabilities found." >> report.md
-      - name: Read vulnerability report
-        id: vuln_report
-        run: |
-          content=$(cat report.md)
-          # Escape newlines for GitHub Actions output
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          echo "report=$content" >> $GITHUB_OUTPUT
 
-      # AI Explanation step (requires OPENAI_API_KEY in repo/org secrets)
+          vulns=$(jq '.Results[].Vulnerabilities | length' trivy-results.json | awk '{s+=$1} END {print s}')
+          if [ "$vulns" -gt 0 ]; then
+            jq -r '
+              .Results[].Vulnerabilities[] |
+              "| \(.PkgName) | \(.VulnerabilityID) | \(.Severity) | \(.Title // "No title") | Fixed: \(.FixedVersion // "N/A") |"
+            ' trivy-results.json >> report.md
+          else
+            echo "No vulnerabilities found." >> report.md
+          fi
+
+          echo "" >> report.md
+          echo "--- RAW JSON (for debugging) ---" >> report.md
+          cat trivy-results.json >> report.md
+
+          cat report.md
+
+      # 🤖 Generate AI explanation
       - name: Generate AI explanation
         id: ai_explain
         run: |
-          content=$(cat report.md || echo "No vulnerabilities found.")
-          prompt="Explain these vulnerabilities in simple terms, their risk, and how to fix: $content"
-          response=$(curl https://api.openai.com/v1/chat/completions \
+          content=$(cat report.md)
+          prompt="Explain these vulnerability scan results in plain English for developers:\n\n$content"
+          response=$(curl -s https://api.openai.com/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
             -d "{
               \"model\": \"gpt-4o-mini\",
               \"messages\": [{\"role\": \"user\", \"content\": \"$prompt\"}]
-            }" | jq -r '.choices[0].message.content')
-          echo "ai_response=$response" >> $GITHUB_OUTPUT
+            }" | jq -r '.choices[0].message.content // "AI explanation not available"')
+          echo "ai_response<<EOF" >> $GITHUB_OUTPUT
+          echo "$response" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      # Create PR comment with dashboard
+      # 📝 Post PR Comment
       - name: Post PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -84,22 +75,9 @@ jobs:
             ✅ Dependency scan completed.
 
             ### 📊 Vulnerability Report
-            ${{ steps.vuln_report.outputs.report }}
+            ${{ steps.ai_explain.outputs.ai_response }}
 
             ### 🤖 AI Explanation
             ${{ steps.ai_explain.outputs.ai_response }}
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-
-      # Auto-fix dependencies (optional safe updates)
-      - name: Auto-fix dependencies
-        run: |
-          npm audit fix || true
-          if [[ `git status --porcelain` ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git checkout -b fix/dependency-updates || git checkout fix/dependency-updates
-            git add .
-            git commit -m "chore: auto-fix dependencies"
-            git push origin HEAD
-          fi
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
