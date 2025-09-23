@@ -56,11 +56,8 @@ jobs:
             "\(.PkgName)@\(.InstalledVersion): \(.Title) (Severity: \(.Severity), Fix: \(.FixedVersion))"' \
             trivy-results.json | head -n 5)
 
-          # Encode to base64 to avoid JSON issues
-          encoded=$(echo "$summary" | base64 -w0)
-
           # Build safe JSON body for Titan
-          jq -n --arg text "$(echo "$encoded" | base64 -d)" \
+          jq -n --arg text "$summary" \
             '{
               inputText: "Explain these vulnerabilities in simple terms with recommended fixes:\n\($text)",
               textGenerationConfig: {
@@ -78,11 +75,19 @@ jobs:
             response.json
 
           # Extract AI explanation
-          echo "ai=$(jq -r '.results[0].outputText' response.json)" >> $GITHUB_OUTPUT
+          ai_exp=$(jq -r '.results[0].outputText' response.json)
+
+          # ✅ Safe multiline output for GitHub Actions
+          {
+            echo "ai<<EOF"
+            echo "$ai_exp"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+
 
 
       # 4. AI Static Code Review with Titan
