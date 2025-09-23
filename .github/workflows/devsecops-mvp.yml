@@ -11,7 +11,7 @@ permissions:
 jobs:
   devsecops-scan:
     runs-on: ubuntu-latest
-
+   
     steps:
       # Checkout repo
       - name: Checkout code
