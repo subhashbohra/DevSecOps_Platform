@@ -96,12 +96,10 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # ---------- Inline PR comments (top SAST findings) ----------
-      - name: Inline comments for top SAST findings (up to 10)
+      - name: Inline comments for top SAST findings (up to 5)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
-          # Post at most 10 comments to avoid noise
           count=0
           jq -c '
             .results[]?
@@ -111,19 +109,21 @@ jobs:
             line=$(echo "$item" | jq -r '.line')
             rule=$(echo "$item" | jq -r '.rule')
             sev=$(echo "$item" | jq -r '.severity')
-            msg=$(echo "$item" | jq -r '.message' | tr -d '\r' | head -c 700)
+            msg=$(echo "$item" | jq -r '.message' | tr -d '\r' | head -c 600)
 
             body="**SAST** (\`$rule\`, $sev): $msg"
-            # Create an inline PR comment on the current head commit
+
             gh api repos/$REPO/pulls/$PR_NUMBER/comments \
               -f body="$body" \
               -f commit_id="$HEAD_SHA" \
               -f path="$path" \
-              -f line="$line" || true
+              -F line=$line \
+              -F side=RIGHT || true
 
             count=$((count+1))
-            [ "$count" -ge 10 ] && break
+            [ "$count" -ge 5 ] && break
           done
+
 
       # ---------- AI Vulnerability Review (Bedrock Titan) ----------
       - name: AI Vulnerability Review (Bedrock Titan)
