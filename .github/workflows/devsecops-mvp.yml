@@ -1,6 +1,7 @@
 name: DevSecOps Scan with Bedrock AI
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened]
 
