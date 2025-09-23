@@ -1,105 +1,126 @@
-name: AI DevSecOps MVP
+name: DevSecOps Scan with Bedrock AI
 
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
-  issues: write
 
 jobs:
-  devsecops-scan:
+  trivy-scan:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout repo
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Node.js for dependency scanning (can extend for Python, Java, etc.)
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release jq curl unzip
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install -y trivy
 
-      # Install deps (safe mode, no audit fix)
-      - name: Install dependencies
-        run: npm install --ignore-scripts
-
-      # Run npm audit (SCA scan)
-      - name: Run dependency audit
-        run: npm audit --json > audit.json || true
-      # Run trivy Scan 
+      # 1. Run Trivy to detect vulnerabilities
       - name: Run Trivy scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          ignore-unfixed: true
-          format: json
-          output: trivy-results.json
-
-
-      # Parse audit report into Markdown table
-      - name: Generate vulnerability report
         run: |
-          echo "## 🔍 Dependency Vulnerability Report" > report.md
-          echo "" >> report.md
-          jq -r '
-            .advisories[] |
-            "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
-          ' audit.json >> report.md || echo "No vulnerabilities found." >> report.md
-      - name: Read vulnerability report
-        id: vuln_report
-        run: |
-          content=$(cat report.md)
-          # Escape newlines for GitHub Actions output
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          echo "report=$content" >> $GITHUB_OUTPUT
+          trivy fs --ignore-unfixed --format json --output trivy-results.json .
 
-      # AI Explanation step (requires OPENAI_API_KEY in repo/org secrets)
-      - name: Generate AI explanation
-        id: ai_explain
+      # 2. Generate Markdown report of vulnerabilities
+      - name: Generate Markdown Report
+        id: generate_report
         run: |
-          content=$(cat report.md || echo "No vulnerabilities found.")
-          prompt="Explain these vulnerabilities in simple terms, their risk, and how to fix: $content"
-          response=$(curl https://api.openai.com/v1/chat/completions \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
-            -d "{
-              \"model\": \"gpt-4o-mini\",
-              \"messages\": [{\"role\": \"user\", \"content\": \"$prompt\"}]
-            }" | jq -r '.choices[0].message.content')
-          echo "ai_response=$response" >> $GITHUB_OUTPUT
+          {
+            echo "| Package | Version | CVE | Severity | Reference |"
+            echo "|---------|---------|-----|----------|-----------|"
+            jq -r '
+              .Results[].Vulnerabilities[]? |
+              "| \(.PkgName) | \(.InstalledVersion) | \(.VulnerabilityID) | \(.Severity) | [Link](\(.PrimaryURL)) |"
+            ' trivy-results.json
+          } > report.md
 
-      # Create PR comment with dashboard
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          cat report.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # 3. AI Vulnerability Explanation with Titan
+      - name: AI Vulnerability Review (Titan)
+        id: ai_vuln
+        run: |
+          summary=$(jq -r '.Results[].Vulnerabilities[]? | "\(.PkgName)@\(.InstalledVersion): \(.Title) (Severity: \(.Severity), Fix: \(.FixedVersion))"' trivy-results.json | head -n 5)
+
+          cat > vuln_prompt.json <<EOF
+          {
+            "inputText": "Explain these vulnerabilities in simple terms with recommended fixes:\n$summary",
+            "textGenerationConfig": {
+              "maxTokenCount": 500,
+              "temperature": 0.7,
+              "topP": 0.9
+            }
+          }
+          EOF
+
+          aws bedrock-runtime invoke-model \
+            --region $AWS_REGION \
+            --model-id amazon.titan-text-lite-v1 \
+            --body fileb://vuln_prompt.json \
+            response.json
+
+          echo "ai=$(jq -r '.results[0].outputText' response.json)" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      # 4. AI Static Code Review with Titan
+      - name: AI Static Code Review (Titan)
+        id: ai_code
+        run: |
+          file=$(find . -name "*.js" | head -n 1)
+          head -n 200 "$file" > code_sample.js
+
+          cat > code_prompt.json <<EOF
+          {
+            "inputText": "Review this JavaScript code for security issues and suggest fixes with diff-style patches:\n$(cat code_sample.js)",
+            "textGenerationConfig": {
+              "maxTokenCount": 500,
+              "temperature": 0.7,
+              "topP": 0.9
+            }
+          }
+          EOF
+
+          aws bedrock-runtime invoke-model \
+            --region $AWS_REGION \
+            --model-id amazon.titan-text-lite-v1 \
+            --body fileb://code_prompt.json \
+            response.json
+
+          echo "review=$(jq -r '.results[0].outputText' response.json)" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
+      # 5. Post results to PR
       - name: Post PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
-          header: devsecops-scan
+          header: trivy-scan
           message: |
-            ## 🛡️ AI DevSecOps Scan Summary
-            ✅ Dependency scan completed.
+            ## ✅ Dependency Scan Completed
 
-            ### 📊 Vulnerability Report
-            ${{ steps.vuln_report.outputs.report }}
+            📊 **Vulnerability Report**
+            ${{ steps.generate_report.outputs.report }}
 
-            ### 🤖 AI Explanation
-            ${{ steps.ai_explain.outputs.ai_response }}
+            🤖 **AI Vulnerability Review (Titan)**
+            ${{ steps.ai_vuln.outputs.ai }}
+
+            🔍 **AI Static Code Review (Titan)**
+            ${{ steps.ai_code.outputs.review }}
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
-
-      # Auto-fix dependencies (optional safe updates)
-      - name: Auto-fix dependencies
-        run: |
-          npm audit fix || true
-          if [[ `git status --porcelain` ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git checkout -b fix/dependency-updates || git checkout fix/dependency-updates
-            git add .
-            git commit -m "chore: auto-fix dependencies"
-            git push origin HEAD
-          fi
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
