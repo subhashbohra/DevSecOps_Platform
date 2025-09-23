@@ -2,7 +2,6 @@ name: DevSecOps – Unified SCA + SAST + AI (Bedrock)
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
