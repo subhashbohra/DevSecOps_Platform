@@ -98,7 +98,7 @@ jobs:
       # ---------- Inline PR comments (top SAST findings) ----------
       - name: Inline comments for top SAST findings (up to 5)
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         run: |
           count=0
           jq -c '
@@ -199,7 +199,7 @@ jobs:
       - name: Post unified PR dashboard
         uses: marocchino/sticky-pull-request-comment@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
         with:
           header: devsecops-unified
           message: |
