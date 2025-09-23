@@ -95,31 +95,49 @@ jobs:
       - name: AI Static Code Review (Titan)
         id: ai_code
         run: |
-          file=$(find . -name "*.js" | head -n 1)
-          head -n 200 "$file" > code_sample.js
+          # Collect a few JS/TS files (avoid broken pipe error)
+          files=$(find . -type f \( -name "*.js" -o -name "*.ts" \) | head -n 3 || true)
 
-          cat > code_prompt.json <<EOF
-          {
-            "inputText": "Review this JavaScript code for security issues and suggest fixes with diff-style patches:\n$(cat code_sample.js)",
-            "textGenerationConfig": {
-              "maxTokenCount": 500,
-              "temperature": 0.7,
-              "topP": 0.9
-            }
-          }
-          EOF
+          code_snippets=""
+          for f in $files; do
+            code_snippets="$code_snippets\n--- File: $f ---\n$(head -n 50 "$f")\n"
+          done
 
+          # Escape dangerous chars for JSON
+          safe_code=$(printf '%s' "$code_snippets" | jq -Rs .)
+
+          # Build JSON body for Titan
+          jq -n --arg code "$safe_code" \
+            '{
+              inputText: "Review the following code for security vulnerabilities and suggest safer alternatives:\n\($code)",
+              textGenerationConfig: {
+                maxTokenCount: 700,
+                temperature: 0.7,
+                topP: 0.9
+              }
+            }' > code_prompt.json
+
+          # Call Bedrock Titan
           aws bedrock-runtime invoke-model \
             --region $AWS_REGION \
             --model-id amazon.titan-text-lite-v1 \
             --body fileb://code_prompt.json \
-            response.json
+            code_response.json
 
-          echo "review=$(jq -r '.results[0].outputText' response.json)" >> $GITHUB_OUTPUT
+          # Extract AI explanation
+          ai_review=$(jq -r '.results[0].outputText' code_response.json)
+
+          # ✅ Safe multiline output
+          {
+            echo "review<<EOF"
+            echo "$ai_review"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+
 
       # 5. Post results to PR
       - name: Post PR Comment
