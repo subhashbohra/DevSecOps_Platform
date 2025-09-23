@@ -96,10 +96,11 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # ---------- Inline PR comments (top SAST findings) ----------
-      - name: Inline comments for top SAST findings (up to 5)
+      - name: Post SAST findings as PR comments
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set +e   # don’t exit on first error
           count=0
           jq -c '
             .results[]?
@@ -114,12 +115,12 @@ jobs:
             body="**SAST** (\`$rule\`, $sev): $msg — in \`$path:$line\`"
 
             gh api repos/$REPO/issues/$PR_NUMBER/comments \
-              -f body="$body" || true
+              -f body="$body" || true   # never fail
 
             count=$((count+1))
             [ "$count" -ge 10 ] && break
           done
-
+          exit 0   # force success
 
       # ---------- AI Vulnerability Review (Bedrock Titan) ----------
       - name: AI Vulnerability Review (Bedrock Titan)
