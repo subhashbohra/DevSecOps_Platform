@@ -111,17 +111,13 @@ jobs:
             sev=$(echo "$item" | jq -r '.severity')
             msg=$(echo "$item" | jq -r '.message' | tr -d '\r' | head -c 600)
 
-            body="**SAST** (\`$rule\`, $sev): $msg"
+            body="**SAST** (\`$rule\`, $sev): $msg — in \`$path:$line\`"
 
-            gh api repos/$REPO/pulls/$PR_NUMBER/comments \
-              -f body="$body" \
-              -f commit_id="$HEAD_SHA" \
-              -f path="$path" \
-              -F line=$line \
-              -F side=RIGHT || true
+            gh api repos/$REPO/issues/$PR_NUMBER/comments \
+              -f body="$body" || true
 
             count=$((count+1))
-            [ "$count" -ge 5 ] && break
+            [ "$count" -ge 10 ] && break
           done
 
 
