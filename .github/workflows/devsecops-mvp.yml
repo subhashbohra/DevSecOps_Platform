@@ -45,19 +45,24 @@ jobs:
         run: |
           echo "## 🔍 Dependency Vulnerability Report" > report.md
           echo "" >> report.md
-          jq -r '
-            .advisories[] |
-            "| \(.module_name) | \(.id) | \(.severity) | \(.title) | \(.recommendation) |"
-          ' audit.json >> report.md || echo "No vulnerabilities found." >> report.md
-      - name: Read vulnerability report
-        id: vuln_report
-        run: |
-          content=$(cat report.md)
-          # Escape newlines for GitHub Actions output
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          echo "report=$content" >> $GITHUB_OUTPUT
+          
+          # Count total vulnerabilities safely (default null -> empty list)
+          vulns=$(jq '[.Results[].Vulnerabilities // []] | add | length' trivy-results.json)
+
+          if [ "$vulns" -gt 0 ]; then
+            echo "| Package | CVE | Severity | Installed | Fixed | Title |" >> report.md
+            echo "|---------|-----|----------|-----------|-------|-------|" >> report.md
+            jq -r '
+              .Results[].Vulnerabilities // [] |
+              .[] |
+              "| \(.PkgName) | \(.VulnerabilityID) | \(.Severity) | \(.InstalledVersion // "N/A") | \(.FixedVersion // "N/A") | \(.Title // "No title") |"
+            ' trivy-results.json >> report.md
+          else
+            echo "No vulnerabilities found." >> report.md
+          fi
+
+          cat report.md
+
 
       # AI Explanation step (requires OPENAI_API_KEY in repo/org secrets)
       - name: Generate AI explanation
