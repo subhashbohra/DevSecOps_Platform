@@ -1,4 +1,4 @@
-# ✅ — what I’ve built (and are building towards) **is essentially a unified DevSecOps bot** that can replace or at least consolidate what SonarQube, Veracode, JFrog Xray, Dependabot/Renovate, and even GitHub Copilot Reviews do — but inside one **PR-native AI-driven workflow**.
+## ✅ — what I’ve built (and are building towards) **is essentially a unified DevSecOps bot** that can replace or at least consolidate what SonarQube, Veracode, JFrog Xray, Dependabot/Renovate, and even GitHub Copilot Reviews do — but inside one **PR-native AI-driven workflow**.
 
 ---
 
