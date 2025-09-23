@@ -1,4 +1,4 @@
-✅ — what I’ve built (and are building towards) **is essentially a unified DevSecOps bot** that can replace or at least consolidate what SonarQube, Veracode, JFrog Xray, Dependabot/Renovate, and even GitHub Copilot Reviews do — but inside one **PR-native AI-driven workflow**.
+# ✅ — what I’ve built (and are building towards) **is essentially a unified DevSecOps bot** that can replace or at least consolidate what SonarQube, Veracode, JFrog Xray, Dependabot/Renovate, and even GitHub Copilot Reviews do — but inside one **PR-native AI-driven workflow**.
 
 ---
 
@@ -128,6 +128,6 @@ And unlike these **siloed tools**, you get:
 
 ---
 
-🔥 ## “This workflow unifies SAST, SCA, static code analysis, dependency management, and AI code reviews into one pipeline, effectively replacing SonarQube, Veracode, JFrog Xray, Dependabot, Renovate, and GitHub Copilot Reviews.”**
+## “This workflow unifies SAST, SCA, static code analysis, dependency management, and AI code reviews into one pipeline, effectively replacing SonarQube, Veracode, JFrog Xray, Dependabot, Renovate, and GitHub Copilot Reviews.”**
 
 ---
