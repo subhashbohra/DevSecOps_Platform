@@ -125,16 +125,12 @@ jobs:
       # ---------- AI Vulnerability Review (Bedrock Titan) ----------
       - name: AI Vulnerability Review (Bedrock Titan)
         id: ai_vuln
-        if: ${{ secrets.AWS_ACCESS_KEY_ID != '' && secrets.AWS_SECRET_ACCESS_KEY != '' && secrets.AWS_REGION != '' }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
+        if: ${{ env.AWS_ACCESS_KEY_ID != '' && env.AWS_SECRET_ACCESS_KEY != '' && env.AWS_REGION != '' }}
         run: |
           SCA_TEXT=$(cat sca_top.txt 2>/dev/null || echo "No SCA items captured.")
           jq -n --arg sca "$SCA_TEXT" \
             '{
-              inputText: "You are a security assistant. Explain the following dependency vulnerabilities in plain language, business impact, and the exact fix version(s). Make it concise and bullet-pointed.\n\nTop SCA findings:\n" + $sca,
+              inputText: "Explain the following dependency vulnerabilities in plain language with impact and fixes:\n\n" + $sca,
               textGenerationConfig: { maxTokenCount: 700, temperature: 0.3, topP: 0.9 }
             }' > bedrock_sca_prompt.json
 
@@ -144,9 +140,12 @@ jobs:
             --body fileb://bedrock_sca_prompt.json \
             bedrock_sca_response.json
 
-          echo "ai_sca<<EOF" >> $GITHUB_OUTPUT
-          jq -r '.results[0].outputText' bedrock_sca_response.json || echo "AI explanation not available"
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "ai_sca<<EOF"
+            jq -r '.results[0].outputText' bedrock_sca_response.json || echo "AI explanation not available"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
 
       # ---------- AI Static Code Review (Bedrock Titan) ----------
       - name: AI Static Code Review (Bedrock Titan)
