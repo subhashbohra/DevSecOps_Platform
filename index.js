@@ -1,18 +1,26 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const sqlRoutes = require('./routes/sql');
-const execRoutes = require('./routes/exec');
-const fileRoutes = require('./routes/fileupload');
-const authRoutes = require('./routes/auth');
+const _ = require('lodash');
+const request = require('request');
 
 const app = express();
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+const port = 3000;
 
-app.use('/sql', sqlRoutes);
-app.use('/exec', execRoutes);
-app.use('/upload', fileRoutes);
-app.use('/auth', authRoutes);
+// Vulnerable lodash usage (prototype pollution risks)
+app.get('/merge', (req, res) => {
+  const obj = {};
+  _.merge(obj, JSON.parse(req.query.input || '{}'));
+  res.json(obj);
+});
 
-app.get('/', (req, res) => res.send('Vuln Testbed Running'));
-app.listen(3000, () => console.log('Listening on 3000'));
+// Insecure request library usage (deprecated)
+app.get('/fetch', (req, res) => {
+  const url = req.query.url || 'http://example.com';
+  request(url, (err, response, body) => {
+    if (err) return res.status(500).send('Error fetching URL');
+    res.send(body);
+  });
+});
+
+app.listen(port, () => {
+  console.log(`Vulnerable app listening at http://localhost:${port}`);
+});

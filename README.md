@@ -1,22 +1,15 @@
 # Vuln Testbed NodeJS
 
-Deliberately vulnerable Node.js project to test SCA / SAST / secret detection / container scanners.
+This is a deliberately vulnerable Node.js app to test the **AI DevSecOps workflow**.
 
-## How to use
-1. Create a repo `vuln-testbed-nodejs` and push these files.
-2. Add your GitHub Actions workflow (devsecops-mvp.yml).
-3. Add secret `OPENAI_API_KEY` if using AI steps.
-4. Open a PR or push to branch to trigger Actions.
+## Vulnerable Packages
+- **express 4.16.0** → multiple CVEs
+- **lodash 4.17.19** → prototype pollution (CVE-2021-23337)
+- **request 2.88.0** → deprecated, known vulns
+- **jsonwebtoken 8.2.1** → security issues in older versions
+- **xmldom 0.1.27** → XXE risks
 
-## Vulnerability signals included (non-exhaustive)
-- Outdated dependencies with known advisories (lodash, express, request, axios, xmldom, etc.)
-- SQL injection (unsanitized string concat)
-- Command injection (child_process.exec with user input)
-- Insecure file upload & path handling
-- Hardcoded secrets and API keys
-- Weak JWT secret / no expiry
-- Legacy/insecure crypto usage
-- Insecure Docker base image (node:10)
-- Potential XML parser issues
-
-> Do **not** run this app on production or expose it publicly. Use it only in a controlled test environment.
+## Usage
+```bash
+npm install
+npm start
