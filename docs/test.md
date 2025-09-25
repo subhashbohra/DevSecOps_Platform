@@ -17,4 +17,16 @@ jq '[.. | objects | select(has("properties")) | select(((.properties["security-s
 
 echo "Filtered high/critical issues: $(jq '[.runs[].results[]] | length' "$filtered_sarif_file")"
 
+*******************************************************
+jq '[.runs[].results[] 
+     | select((((.properties["security-severity"] 
+              // .rule.properties["security-severity"] 
+              // "0") | tonumber) >= 7.0))]' "$sarif_file" > "$filtered_sarif_file"
+
+
+-------------------
+jq -r '
+  .runs[].results[]
+  | {ruleId, props: .properties["security-severity"], ruleProps: .rule.properties["security-severity"]}
+' "$sarif_file"
 
