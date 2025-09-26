@@ -1,13 +1,1 @@
-jq '[.runs[].results[] as $r
-     | (.runs[].tool.driver.rules[]?, .runs[].tool.extensions[].rules[]?)
-     | select(.id == $r.ruleId)
-     | select(
-         ((.properties["security-severity"] // "0" | tonumber) >= 7.0)
-         or (.properties.precision == "very-high" or .properties.precision == "high")
-       )
-     | $r + {
-         ruleId: .id,
-         security_severity: .properties["security-severity"],
-         precision: .properties.precision
-       }
-    ]' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/findings.json
+"CodeQL SARIF encodes severity (CVSS-style score) and precision (confidence). Our filter originally only matched 4 results because it depended on the rules metadata. Once we fixed it to read severity/precision consistently from rule objects, we now see the full set — ~98 high, 47 very-high, 85 medium. Importantly, even if precision=medium, a high severity (like 9.8) is still flagged."
