@@ -1,0 +1,13 @@
+- name: check for high/critical issues
+  run: |
+    jq '[.runs[].results[] as $r
+         | .runs[].tool.driver.rules[]
+         | select(.id == $r.ruleId)
+         | select(
+             ((.properties["security-severity"] // "0" | tonumber) >= 7.0)
+             or (.properties.precision == "very-high" or .properties.precision == "high")
+           )
+         | $r + {security_severity: .properties["security-severity"], precision: .properties.precision}
+        ]' ./_codeql_scanned_result/java.sarif > findings.json
+
+    cat findings.json
