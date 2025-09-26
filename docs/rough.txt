@@ -1,13 +1,24 @@
-- name: check for high/critical issues
-  run: |
-    jq '[.runs[].results[] as $r
-         | .runs[].tool.driver.rules[]
-         | select(.id == $r.ruleId)
-         | select(
-             ((.properties["security-severity"] // "0" | tonumber) >= 7.0)
-             or (.properties.precision == "very-high" or .properties.precision == "high")
-           )
-         | $r + {security_severity: .properties["security-severity"], precision: .properties.precision}
-        ]' ./_codeql_scanned_result/java.sarif > findings.json
+jq '[.runs[].results[] as $r
+     | .runs[].tools.extensions[].rules[]
+     | select(.id == $r.ruleId)
+     | select(
+         ((.properties["security-severity"] // "0" | tonumber) >= 7.0)
+         or (.properties.precision == "very-high" or .properties.precision == "high")
+       )
+     | $r + {
+         ruleId: .id,
+         security_severity: .properties["security-severity"],
+         precision: .properties.precision
+       }
+    ]' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/findings.json
 
-    cat findings.json
+
+=============================
+jq '. | length' ./_codeql_scanned_result/findings.json
+
+====================================
+jq -r '.runs[].results[] as $r
+       | .runs[].tools.extensions[].rules[]
+       | select(.id == $r.ruleId)
+       | {ruleId: .id, severity: .properties["security-severity"], precision: .properties.precision}' \
+   ./_codeql_scanned_result/java.sarif | head -20
