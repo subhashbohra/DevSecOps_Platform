@@ -1,5 +1,5 @@
 jq '[.runs[].results[] as $r
-     | .runs[].tools.extensions[].rules[]
+     | .runs[].tool.extensions[].rules[]
      | select(.id == $r.ruleId)
      | select(
          ((.properties["security-severity"] // "0" | tonumber) >= 7.0)
@@ -12,13 +12,14 @@ jq '[.runs[].results[] as $r
        }
     ]' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/findings.json
 
+-----------------------------------------
 
-=============================
-jq '. | length' ./_codeql_scanned_result/findings.json
+jq '.runs[].tool | keys' ./_codeql_scanned_result/java.sarif
 
-====================================
-jq -r '.runs[].results[] as $r
-       | .runs[].tools.extensions[].rules[]
-       | select(.id == $r.ruleId)
-       | {ruleId: .id, severity: .properties["security-severity"], precision: .properties.precision}' \
-   ./_codeql_scanned_result/java.sarif | head -20
+----------------------------------------
+
+jq '.runs[].tool.extensions[].rules | length' ./_codeql_scanned_result/java.sarif
+
+
+-------------------------------
+jq '.runs[].tool.driver.rules | length' ./_codeql_scanned_result/java.sarif
