@@ -6,9 +6,9 @@ jq '{
         driver: {
           name: "CodeQL",
           rules: (
-            [(.runs[].tool.driver.rules[]? // empty),
-             (.runs[].tool.extensions[].rules[]? // empty)]
-            | add // empty array if nothing
+            [(.runs[].tool.driver.rules[]? // []),
+             (.runs[].tool.extensions[].rules[]? // [])]
+            | add
           )
         }
       },
@@ -16,13 +16,3 @@ jq '{
     }
   ]
 }' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/fixed.sarif
-
-----------------------.
-jq '.runs[0].tool.driver.rules | type' ./_codeql_scanned_result/fixed.sarif
-
-
---------------
-
-jq '.runs[0].tool.driver.rules | length' ./_codeql_scanned_result/fixed.sarif
-
-
