@@ -5,7 +5,11 @@ jq '{
       tool: {
         driver: {
           name: "CodeQL",
-          rules: ([.runs[].tool.driver.rules[]?, .runs[].tool.extensions[].rules[]?] | add?)
+          rules: (
+            [(.runs[].tool.driver.rules[]? // empty),
+             (.runs[].tool.extensions[].rules[]? // empty)]
+            | add // empty array if nothing
+          )
         }
       },
       results: .runs[0].results
