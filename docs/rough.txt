@@ -1,3 +1,34 @@
+Check ruleIds exist and match driver rules:
+jq -r '.runs[0].results[].ruleId' ./_codeql_scanned_result/fixed.sarif | sort -u
+jq -r '.runs[0].tool.driver.rules[].id' ./_codeql_scanned_result/fixed.sarif | sort -u
+
+👉 Must overlap 1:1.
+
+Check if locations exist:
+jq '.runs[0].results[].locations' ./_codeql_scanned_result/fixed.sarif | head -20
+👉 Must not be null — needs file + line info.
+
+
+Check ruleId mapping:
+
+jq -r '.runs[0].results[].ruleId' ./_codeql_scanned_result/fixed.sarif | sort -u | head -20
+jq -r '.runs[0].tool.driver.rules[].id' ./_codeql_scanned_result/fixed.sarif | grep "spring" | head -20
+
+👉 If results ruleIds don’t exist in driver.rules, GitHub discards them.
+
+
+Check if locations exist:
+jq '.runs[0].results[].locations' ./_codeql_scanned_result/fixed.sarif | head -10
+
+👉 If null or [], GitHub discards them.
+
+
+✅ Likely Fix
+
+When rewriting SARIF, we must carry over locations and message intact.
+Here’s a safer jq transform:
+
+
 jq '{
   version: "2.1.0",
   runs: [
@@ -10,10 +41,20 @@ jq '{
              (.runs[].tool.extensions[].rules? // [])]
             | map(if type == "array" then . else [.] end)
             | flatten
+            | map(. + {
+                shortDescription: {text: (.shortDescription.text // .id)},
+                fullDescription: {text: (.fullDescription.text // "CodeQL rule " + .id)}
+              })
           )
         }
       },
-      results: .runs[0].results
+      results: (.runs[0].results | map({
+        ruleId,
+        message,
+        locations
+      }))
     }
   ]
 }' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/fixed.sarif
+
+
