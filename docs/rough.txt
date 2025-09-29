@@ -1,1 +1,25 @@
-"CodeQL SARIF encodes severity (CVSS-style score) and precision (confidence). Our filter originally only matched 4 results because it depended on the rules metadata. Once we fixed it to read severity/precision consistently from rule objects, we now see the full set — ~98 high, 47 very-high, 85 medium. Importantly, even if precision=medium, a high severity (like 9.8) is still flagged."
+jq '{
+  version: "2.1.0",
+  runs: [
+    {
+      tool: {
+        driver: {
+          name: "CodeQL",
+          rules: ([.runs[].tool.extensions[].rules[]] | add)
+        }
+      },
+      results: .runs[0].results
+    }
+  ]
+}' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/fixed.sarif
+
+
+
+
+====================
+
+- name: Upload fixed SARIF to Security tab
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: ./_codeql_scanned_result/fixed.sarif
+    category: fixed-codeql
