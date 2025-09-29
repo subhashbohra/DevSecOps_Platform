@@ -16,3 +16,13 @@ jq '{
     }
   ]
 }' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/fixed.sarif
+
+----------------------.
+jq '.runs[0].tool.driver.rules | type' ./_codeql_scanned_result/fixed.sarif
+
+
+--------------
+
+jq '.runs[0].tool.driver.rules | length' ./_codeql_scanned_result/fixed.sarif
+
+
