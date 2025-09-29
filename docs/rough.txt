@@ -5,21 +5,10 @@ jq '{
       tool: {
         driver: {
           name: "CodeQL",
-          rules: ([.runs[].tool.extensions[].rules[]] | add)
+          rules: ([.runs[].tool.driver.rules[]?, .runs[].tool.extensions[].rules[]?] | add?)
         }
       },
       results: .runs[0].results
     }
   ]
 }' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/fixed.sarif
-
-
-
-
-====================
-
-- name: Upload fixed SARIF to Security tab
-  uses: github/codeql-action/upload-sarif@v3
-  with:
-    sarif_file: ./_codeql_scanned_result/fixed.sarif
-    category: fixed-codeql
