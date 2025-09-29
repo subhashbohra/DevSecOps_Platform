@@ -6,9 +6,10 @@ jq '{
         driver: {
           name: "CodeQL",
           rules: (
-            [(.runs[].tool.driver.rules[]? // []),
-             (.runs[].tool.extensions[].rules[]? // [])]
-            | add
+            [(.runs[].tool.driver.rules? // []),
+             (.runs[].tool.extensions[].rules? // [])]
+            | map(if type == "array" then . else [.] end)
+            | flatten
           )
         }
       },
