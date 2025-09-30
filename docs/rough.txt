@@ -1,11 +1,18 @@
-jq -r '
-  .runs[] as $run
-  | $run.results[]
-  | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0)) as $r
-  | (
-      [$run.tool.driver.rules[]?, $run.tool.extensions[].rules[]?] 
-      | map(select(.id == $r.ruleId)) 
-      | first
-    ) as $rule
-  | "Rule: \($r.ruleId)\nSeverity: \($r.properties["security-severity"])\nMessage: \($r.message.text)\nCWE: \((($rule.properties.tags[]? | select(startswith("cwe:")))//"N/A"))\nName: \($rule.name // "N/A")\nDescription: \($rule.shortDescription.text // "N/A")\n---"
-' ./_codeql_scanned_result/java.sarif
+name: Prevent Self Review
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  block-self-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if author == reviewer
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const reviewer = context.payload.review.user.login;
+            const author = context.payload.pull_request.user.login;
+            if (reviewer === author) {
+              core.setFailed("Authors cannot review their own PRs.");
+            }
