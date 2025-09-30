@@ -1,29 +1,42 @@
-jq '{
-  version: "2.1.0",
-  runs: [
-    {
-      tool: {
-        driver: {
-          name: "CodeQL",
-          rules: (
-            [(.runs[].tool.driver.rules? // []),
-             (.runs[].tool.extensions[].rules? // [])]
-            | map(if type == "array" then . else [.] end)
-            | flatten
-            | map(. + {
-                shortDescription: {text: (.shortDescription.text // .id)},
-                fullDescription: {text: (.fullDescription.text // "CodeQL rule " + .id)}
-              })
-          )
-        }
-      },
-      results: (.runs[0].results | map({
-        ruleId,
-        message,
-        locations,
-        properties,
-        level: (.level // "error")   # 🔥 force a level
-      }))
+jq -r '
+  .runs[0] as $run |
+  $run.results[]
+  | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0))
+  | .ruleId as $rid
+  | {
+      ruleId: $rid,
+      severity: (.properties["security-severity"] // "0"),
+      message: .message.text,
+      cwe: (
+        ($run.tool.driver.rules[]? | select(.id == $rid).properties.tags[]? | select(startswith("cwe:"))) 
+        // "N/A"
+      ),
+      name: ($run.tool.driver.rules[]? | select(.id == $rid).name // "N/A"),
+      description: ($run.tool.driver.rules[]? | select(.id == $rid).shortDescription.text // "N/A")
     }
-  ]
-}' ./_codeql_scanned_result/java.sarif > ./_codeql_scanned_result/fixed.sarif
+' ./_codeql_scanned_result/java.sarif
+
+----------------------------------------
+- name: Check for High/Critical Issues
+  run: |
+    RULES=$(jq '.runs[0].tool.driver.rules | length' ./_codeql_scanned_result/java.sarif)
+    RESULTS=$(jq '.runs[0].results | length' ./_codeql_scanned_result/java.sarif)
+    HIGH=$(jq '[.runs[0].results[] | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0))] | length' ./_codeql_scanned_result/java.sarif)
+
+    echo "Total rules checked: $RULES"
+    echo "Total findings: $RESULTS"
+    echo "High/Critical findings: $HIGH"
+
+    echo "Detailed High/Critical Issues:"
+    jq -r '
+      .runs[0] as $run |
+      $run.results[]
+      | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0))
+      | .ruleId as $rid
+      | "Rule: \($rid)\nSeverity: \(.properties["security-severity"])\nMessage: \(.message.text)\nCWE: \(($run.tool.driver.rules[]? | select(.id == $rid).properties.tags[]? | select(startswith("cwe:")))//"N/A")\nName: \(($run.tool.driver.rules[]? | select(.id == $rid).name // "N/A"))\nDescription: \(($run.tool.driver.rules[]? | select(.id == $rid).shortDescription.text // "N/A"))\n---"
+    ' ./_codeql_scanned_result/java.sarif
+
+    if [ "$HIGH" -gt 0 ]; then
+      echo "❌ Build failed: High/Critical issues detected."
+      exit 1
+    fi
