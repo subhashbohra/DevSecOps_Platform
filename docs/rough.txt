@@ -1,42 +1,11 @@
 jq -r '
-  .runs[0] as $run |
-  $run.results[]
-  | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0))
-  | .ruleId as $rid
-  | {
-      ruleId: $rid,
-      severity: (.properties["security-severity"] // "0"),
-      message: .message.text,
-      cwe: (
-        ($run.tool.driver.rules[]? | select(.id == $rid).properties.tags[]? | select(startswith("cwe:"))) 
-        // "N/A"
-      ),
-      name: ($run.tool.driver.rules[]? | select(.id == $rid).name // "N/A"),
-      description: ($run.tool.driver.rules[]? | select(.id == $rid).shortDescription.text // "N/A")
-    }
+  .runs[] as $run
+  | $run.results[]
+  | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0)) as $r
+  | (
+      [$run.tool.driver.rules[]?, $run.tool.extensions[].rules[]?] 
+      | map(select(.id == $r.ruleId)) 
+      | first
+    ) as $rule
+  | "Rule: \($r.ruleId)\nSeverity: \($r.properties["security-severity"])\nMessage: \($r.message.text)\nCWE: \((($rule.properties.tags[]? | select(startswith("cwe:")))//"N/A"))\nName: \($rule.name // "N/A")\nDescription: \($rule.shortDescription.text // "N/A")\n---"
 ' ./_codeql_scanned_result/java.sarif
-
-----------------------------------------
-- name: Check for High/Critical Issues
-  run: |
-    RULES=$(jq '.runs[0].tool.driver.rules | length' ./_codeql_scanned_result/java.sarif)
-    RESULTS=$(jq '.runs[0].results | length' ./_codeql_scanned_result/java.sarif)
-    HIGH=$(jq '[.runs[0].results[] | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0))] | length' ./_codeql_scanned_result/java.sarif)
-
-    echo "Total rules checked: $RULES"
-    echo "Total findings: $RESULTS"
-    echo "High/Critical findings: $HIGH"
-
-    echo "Detailed High/Critical Issues:"
-    jq -r '
-      .runs[0] as $run |
-      $run.results[]
-      | select(((.properties["security-severity"] // "0" | tonumber) >= 7.0))
-      | .ruleId as $rid
-      | "Rule: \($rid)\nSeverity: \(.properties["security-severity"])\nMessage: \(.message.text)\nCWE: \(($run.tool.driver.rules[]? | select(.id == $rid).properties.tags[]? | select(startswith("cwe:")))//"N/A")\nName: \(($run.tool.driver.rules[]? | select(.id == $rid).name // "N/A"))\nDescription: \(($run.tool.driver.rules[]? | select(.id == $rid).shortDescription.text // "N/A"))\n---"
-    ' ./_codeql_scanned_result/java.sarif
-
-    if [ "$HIGH" -gt 0 ]; then
-      echo "❌ Build failed: High/Critical issues detected."
-      exit 1
-    fi
