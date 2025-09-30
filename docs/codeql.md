@@ -160,3 +160,17 @@ Merge to Main --> GitHub Actions (codeql-main.yml)
 ---
 
 👉 Do you want me to also design a **diagram (Confluence-ready PNG)** showing the pipeline flow (Dev → PR → CodeQL/Renovate → Main → Veracode) so the relationships are crystal clear visually?
+
+
+
+
+
+how CodeQL, RenovateBot, and Veracode fit together in your pipeline:
+
+Devs raise a PR → PR workflow runs CodeQL + Renovate → inline PR feedback.
+
+Merge to main → CodeQL main workflow runs → results persist in Security tab.
+
+Renovate raises dependency upgrade PRs continuously.
+
+Veracode scans compiled binaries + provides compliance reporting.
