@@ -165,12 +165,46 @@ Merge to Main --> GitHub Actions (codeql-main.yml)
 
 
 
-how CodeQL, RenovateBot, and Veracode fit together in your pipeline:
+Ah, good clarification 👍 — thanks for catching that. RenovateBot isn’t tied to PR workflows like CodeQL; it runs on its **own schedule** (e.g. weekly) and raises PRs for dependency bumps. Let’s fix the wording and diagram flow to match your actual setup:
 
-Devs raise a PR → PR workflow runs CodeQL + Renovate → inline PR feedback.
+---
 
-Merge to main → CodeQL main workflow runs → results persist in Security tab.
+## ✅ Corrected Flow
 
-Renovate raises dependency upgrade PRs continuously.
+* **Devs raise a PR** → triggers **PR workflow**:
 
-Veracode scans compiled binaries + provides compliance reporting.
+  * Runs **CodeQL** → inline PR feedback (security annotations, build fail on High/Critical).
+  * Runs CI jobs (build, Sonar, JFrog, etc.).
+
+* **RenovateBot** → runs on a **weekly schedule**, not per PR:
+
+  * Scans dependencies.
+  * Raises **automated PRs** with version upgrades for vulnerable/old packages.
+  * Those PRs then go through the normal PR workflow (which includes CodeQL + CI).
+
+* **Merge to main** → triggers **main workflow**:
+
+  * Runs **CodeQL baseline scan**.
+  * Uploads SARIF results to **Security tab (Code scanning alerts)** for long-term tracking.
+
+* **Veracode** → runs later in the pipeline:
+
+  * Scans **compiled binaries (JARs/WARs)**.
+  * Provides **compliance dashboards** and coverage beyond GitHub.
+
+---
+
+## 📌 Updated Manager-Friendly Summary
+
+* **CodeQL** → PR-time custom code security.
+* **RenovateBot** → weekly dependency PRs (shift-left SCA).
+* **Veracode** → post-build binary scans + compliance.
+
+Together:
+👉 CodeQL + Renovate shift ~70–80% of security checks left into PRs,
+👉 Veracode remains for compliance and artifact-level coverage.
+
+---
+
+Would you like me to **regenerate the diagram** so Renovate is shown as a **weekly scheduled process raising PRs** (instead of running in each PR workflow)? That way the Confluence diagram exactly matches your company setup.
+
