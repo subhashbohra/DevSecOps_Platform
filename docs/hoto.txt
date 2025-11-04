@@ -1,9 +1,81 @@
-| **Field**                    | **Details** |
-| ---------------------------- | ----------- |
-| Project / Team Name          |             |
-| Department                   |             |
-| Date of Handover             |             |
-| Date of Takeover             |             |
-| Handover By                  |             |
-| Takeover By                  |             |
-| Reporting Manager / Reviewer |             |
+🧭 Handover / Takeover Document
+📋 Basic Details
+
+Insert a table (2 columns, 7 rows) and fill as below:
+
+Field	Details
+Project / Team Name	
+Department	
+Date of Handover	
+Date of Takeover	
+Handover By	
+Takeover By	
+Reporting Manager / Reviewer	
+🧑‍💼 Role Overview
+
+Insert a table (2 columns, 4 rows):
+
+Item	Description
+Role / Designation	
+Key Responsibilities	
+Current Status	
+Upcoming Deadlines / Deliverables	
+⚙️ Ongoing Projects / Tasks
+
+Click ➕ → “Table (5 columns)”
+Add header row:
+
+Project / Task	Description	Current Status	Next Steps	Owner / POC
+				
+				
+
+💡 Tip: For “Current Status”, use /status macro and choose colors:
+🟢 Done / 🟡 In Progress / 🔴 Pending
+
+🧩 Knowledge Transfer Summary
+Topic / Area	Documentation Link	Notes
+		
+		
+
+💡 Tip: Use /link macro to paste relevant Confluence pages or folders.
+
+🧰 Access & Credentials
+System / Tool	Access Type	User ID / Email	Access Info	Transfer Status
+				✅ / ❌
+
+⚠️ Do not paste passwords — mention where they are stored (e.g., 1Password, CyberArk, Vault).
+
+📦 Assets & Deliverables
+Item	Location / Link	Status	Comments
+Documents			
+Reports			
+Scripts / Repos			
+Hardware			
+🔄 Pending Approvals / Open Items
+Item	Description	Owner	Deadline	Remarks
+				
+				
+📞 Key Contacts
+Name	Role	Email	Phone / Teams ID	Remarks
+				
+				
+📚 References & Important Links
+
+Add bullet list:
+
+Project Confluence Page:
+
+GitHub / Bitbucket Repository:
+
+JIRA Dashboard:
+
+Shared Drive / Folder:
+
+SOP / Runbook Document:
+
+✅ Sign-off
+Name	Role	Signature / Date
+Handover By		
+Takeover By		
+Reviewed / Approved By		
+🧾 Comments / Notes
