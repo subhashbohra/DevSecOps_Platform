@@ -1,0 +1,90 @@
+h1. 🧭 Handover / Takeover Document
+
+h2. 📋 Basic Details
+|| Field || Details ||
+| Project / Team Name |  |
+| Department |  |
+| Date of Handover |  |
+| Date of Takeover |  |
+| Handover By |  |
+| Takeover By |  |
+| Reporting Manager / Reviewer |  |
+
+----
+
+h2. 🧑‍💼 Role Overview
+|| Item || Description ||
+| Role / Designation |  |
+| Key Responsibilities |  |
+| Current Status |  |
+| Upcoming Deadlines / Deliverables |  |
+
+----
+
+h2. ⚙️ Ongoing Projects / Tasks
+|| Project / Task || Description || Current Status || Next Steps || Owner / Point of Contact ||
+|  |  |  |  |  |
+|  |  |  |  |  |
+
+----
+
+h2. 🧩 Knowledge Transfer Summary
+|| Topic / Area || Details / Documentation Link || Notes ||
+|  |  |  |
+|  |  |  |
+
+----
+
+h2. 🧰 Access & Credentials
+|| System / Tool || Access Type || User ID / Email || Password / Access Info || Transfer Status ||
+|  |  |  |  | ✅ / ❌ |
+|  |  |  |  | ✅ / ❌ |
+
+*⚠️ For security reasons, share passwords via an approved secure channel (not directly on Confluence).*
+
+----
+
+h2. 📦 Assets & Deliverables
+|| Item || Location / Link || Status || Comments ||
+| Documents |  |  |  |
+| Reports |  |  |  |
+| Scripts / Code Repos |  |  |  |
+| Hardware / Equipment |  |  |  |
+
+----
+
+h2. 🔄 Pending Approvals / Open Items
+|| Item || Description || Owner || Deadline || Remarks ||
+|  |  |  |  |  |
+|  |  |  |  |  |
+
+----
+
+h2. 📞 Key Contacts
+|| Name || Role || Email || Phone / Teams ID || Remarks ||
+|  |  |  |  |  |
+|  |  |  |  |  |
+
+----
+
+h2. 📚 References & Important Links
+* Project Confluence Page: 
+* GitHub / Bitbucket Repository: 
+* JIRA Dashboard: 
+* Shared Folder / Drive: 
+* SOP / Runbook Document: 
+
+----
+
+h2. ✅ Sign-off
+|| Name || Role || Signature / Date ||
+| Handover By |  |  |
+| Takeover By |  |  |
+| Reviewed / Approved By |  |  |
+
+----
+
+h2. 🧾 Comments / Notes
+_Any additional comments, challenges, or next steps._
+
+> Example: Pending documentation update for CI/CD pipeline; code review access still needs to be reassigned.
