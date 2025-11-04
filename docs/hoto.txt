@@ -1,67 +1,9 @@
-Confluence now supports rich-text Markdown conversion automatically when pasted — use this version ⬇️
-
-🧭 Handover / Takeover Document
-📋 Basic Details
-Field	Details
-Project / Team Name	
-Department	
-Date of Handover	
-Date of Takeover	
-Handover By	
-Takeover By	
-Reporting Manager / Reviewer	
-🧑‍💼 Role Overview
-Item	Description
-Role / Designation	
-Key Responsibilities	
-Current Status	
-Upcoming Deadlines / Deliverables	
-⚙️ Ongoing Projects / Tasks
-Project / Task	Description	Current Status	Next Steps	Owner / Point of Contact
-				
-				
-🧩 Knowledge Transfer Summary
-Topic / Area	Details / Documentation Link	Notes
-		
-		
-🧰 Access & Credentials
-System / Tool	Access Type	User ID / Email	Password / Access Info	Transfer Status
-				✅ / ❌
-				✅ / ❌
-
-⚠️ For security reasons, share passwords via an approved secure channel (not directly on Confluence).
-
-📦 Assets & Deliverables
-Item	Location / Link	Status	Comments
-Documents			
-Reports			
-Scripts / Code Repos			
-Hardware / Equipment			
-🔄 Pending Approvals / Open Items
-Item	Description	Owner	Deadline	Remarks
-				
-				
-📞 Key Contacts
-Name	Role	Email	Phone / Teams ID	Remarks
-				
-				
-📚 References & Important Links
-
-Project Confluence Page:
-
-GitHub / Bitbucket Repository:
-
-JIRA Dashboard:
-
-Shared Folder / Drive:
-
-SOP / Runbook Document:
-
-✅ Sign-off
-Name	Role	Signature / Date
-Handover By		
-Takeover By		
-Reviewed / Approved By		
-🧾 Comments / Notes
-
-Example: Pending documentation update for CI/CD pipeline; code review access still needs to be reassigned.
+| **Field**                    | **Details** |
+| ---------------------------- | ----------- |
+| Project / Team Name          |             |
+| Department                   |             |
+| Date of Handover             |             |
+| Date of Takeover             |             |
+| Handover By                  |             |
+| Takeover By                  |             |
+| Reporting Manager / Reviewer |             |
