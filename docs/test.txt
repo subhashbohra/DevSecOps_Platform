@@ -1,0 +1,13 @@
+SELECT table_name, column_name, data_type, character_maximum_length
+FROM information_schema.columns
+WHERE table_schema = DATABASE()
+  AND table_name LIKE '_tool_jira%'
+  AND column_name LIKE '%version%';
+
+
+========================================
+
+ALTER TABLE _tool_jira_issues         MODIFY COLUMN fixed_version   TEXT;
+ALTER TABLE _tool_jira_issues         MODIFY COLUMN fixed_versions  TEXT;
+ALTER TABLE _tool_jira_issue_versions MODIFY COLUMN name            TEXT;
+ALTER TABLE _tool_jira_versions       MODIFY COLUMN name            TEXT;
