@@ -47,3 +47,9 @@ Perfect 🙌 — here’s a **clean comparison matrix** you can use in a deck/em
 📊 You can use this as a slide/table in your presentation.
 
 👉 Do you want me to also draft a **visual architecture diagram** showing how CodeQL (PR checks), RenovateBot (dependency PRs), and Veracode (end-of-pipeline) fit together, so it’s crystal clear for your manager/CISO?
+
+
+
+
+<img width="1534" height="966" alt="image" src="https://github.com/user-attachments/assets/37eb47af-0b75-4e27-aedf-7df13d1183e0" />
+
