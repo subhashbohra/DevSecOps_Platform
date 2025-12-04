@@ -35,10 +35,15 @@ Your real goal is:
 # ✅ **3. What NOT to do**
 
 ❌ Don’t say: “Sir, I’m looking for a job at PwC, can you refer me?”
+
 ❌ Don’t ask him to check your resume
+
 ❌ Don’t talk too much about your certifications gap
+
 ❌ Don’t come across as nervous or needy
+
 ❌ Don’t immediately send him your CV after the event
+
 
 These are instant turn-offs for senior leaders.
 
