@@ -1,3 +1,17 @@
+Yes — and it's actually a significant simplification. Apache DevLake already does the hard correlation work you'd otherwise build by hand: it ingests GitHub and Jira into one database (MySQL/PostgreSQL) with a unified domain schema, including cross-link tables that map PRs ↔ commits ↔ Jira issues (e.g., `pull_requests`, `commits`, `issues`, and mapping tables like `pull_request_issues`). Grafana is just reading that DB.
+
+So instead of your agent calling the GitHub API and Jira API separately (tools 4 and 5 from before), give it **one SQL tool against the DevLake database**. The flow becomes:
+
+1. Incident fires → agent identifies service + time window from logs (your existing RCA).
+2. Agent runs a DevLake query: "PRs merged to repo X between T-72h and T, with author, linked Jira issue, and epic." One join, pre-correlated, no API rate limits, no auth juggling.
+3. Gemma reasons over the diff + error signature to pick the suspect change, and the Jira epic/requirement comes free from the same row.
+
+This improves accuracy too — DevLake has already resolved the messy commit-message/branch-name parsing to link code to Jira keys, so your agent isn't doing fragile regex extraction at runtime.
+
+Two bonus wins: you can write the agent's RCA output *back* into a table DevLake's Grafana reads, so RCA reports appear as a dashboard panel next to the DORA/PR metrics leadership already looks at. And architecturally it's a cleaner story for CAB review — the agent only needs read access to one internal database rather than credentials for GitHub and Jira.
+
+In your Claude Code build plan, this just replaces phases 3–4 with "DevLake SQL query tool" — have Claude Code introspect the DevLake schema first (the domain layer docs are on devlake.apache.org) and generate the queries with mock data before pointing at the real DB.
+
 
 This is a natural extension of your CAB-approved RCA platform — you're essentially going from "log-triggered RCA" to a full agentic incident intelligence pipeline. Here's how I'd architect it:
 
